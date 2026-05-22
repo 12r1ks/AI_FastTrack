@@ -1,0 +1,28 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# uv / venv
+.venv/
+.uv/
+
+# Data (generated — not committed)
+data/*.db
+data/faiss_index/
+
+# Brainstorming session files
+.superpowers/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
