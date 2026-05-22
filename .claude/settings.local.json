@@ -4,7 +4,8 @@
       "WebFetch(domain:docs.pydantic.dev)",
       "Bash(mkdir -p \"C:/Users/rirsa/Documents/GitHub/Personal/AI_FastTrack/.claude/skills/sync-framework-rules\")",
       "Bash(cp \"C:/Users/rirsa/.claude/skills/sync-framework-rules/SKILL.md\" \"C:/Users/rirsa/Documents/GitHub/Personal/AI_FastTrack/.claude/skills/sync-framework-rules/SKILL.md\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(uv add *)"
     ]
   }
 }
