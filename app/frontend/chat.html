@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parking Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #0a0a0a;
+      --white: #f9f9f7;
+      --rule: #d8d8d4;
+      --font: 'Courier Prime', 'Courier New', monospace;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--white);
+      color: var(--black);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 36px 0 20px;
+      border-bottom: 2px solid var(--black);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    #status {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.35;
+      transition: opacity 0.2s;
+    }
+
+    #status.active { opacity: 1; }
+
+    /* ── Chat transcript ── */
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 8px;
+    }
+
+    #chat::-webkit-scrollbar { width: 0; }
+
+    .message {
+      padding: 22px 0;
+      border-bottom: 1px solid var(--rule);
+      animation: appear 0.18s ease both;
+    }
+
+    @keyframes appear {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .label {
+      font-size: 9px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      font-weight: 700;
+      opacity: 0.35;
+      margin-bottom: 9px;
+    }
+
+    .content {
+      font-size: 15px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message.user .label,
+    .message.user .content {
+      text-align: right;
+    }
+
+    .message.user .content {
+      font-style: italic;
+    }
+
+    /* Streaming cursor */
+    .cursor {
+      display: inline-block;
+      width: 7px;
+      height: 14px;
+      background: var(--black);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.75s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    /* ── Input ── */
+    footer {
+      flex-shrink: 0;
+      padding: 18px 0 32px;
+      border-top: 2px solid var(--black);
+    }
+
+    form {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+    }
+
+    #input {
+      flex: 1;
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 10px 0;
+      border: none;
+      border-bottom: 1px solid var(--black);
+      background: transparent;
+      color: var(--black);
+      outline: none;
+      letter-spacing: 0.02em;
+    }
+
+    #input::placeholder { opacity: 0.28; }
+
+    #send {
+      font-family: var(--font);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 10px 0 10px 22px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--black);
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+
+    #send:hover   { opacity: 0.45; }
+    #send:disabled { opacity: 0.18; cursor: default; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Parking Assistant</h1>
+    <span id="status">Ready</span>
+  </header>
+
+  <div id="chat"></div>
+
+  <footer>
+    <form id="form">
+      <input id="input" type="text" placeholder="Ask about parking, rates, availability…" autocomplete="off" autofocus />
+      <button id="send" type="submit">Send →</button>
+    </form>
+  </footer>
+
+  <script>
+    const chatEl  = document.getElementById('chat');
+    const formEl  = document.getElementById('form');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const statusEl = document.getElementById('status');
+
+    const sessionId = localStorage.getItem('park_session') || crypto.randomUUID();
+    localStorage.setItem('park_session', sessionId);
+
+    function addMessage(role, text = '') {
+      const wrap = document.createElement('div');
+      wrap.className = `message ${role}`;
+
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = role === 'user' ? 'You' : 'Assistant';
+
+      const content = document.createElement('div');
+      content.className = 'content';
+      if (text) content.textContent = text;
+
+      wrap.appendChild(label);
+      wrap.appendChild(content);
+      chatEl.appendChild(wrap);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      return content;
+    }
+
+    function setStatus(text, active = false) {
+      statusEl.textContent = text;
+      statusEl.classList.toggle('active', active);
+    }
+
+    async function sendMessage(text) {
+      addMessage('user', text);
+
+      const contentEl = addMessage('assistant');
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      contentEl.appendChild(cursor);
+
+      sendBtn.disabled = true;
+      setStatus('Typing…', true);
+
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId, message: text }),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop();
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const chunk = line.slice(6);
+            if (chunk === '[DONE]') break;
+            contentEl.insertBefore(document.createTextNode(chunk), cursor);
+            chatEl.scrollTop = chatEl.scrollHeight;
+          }
+        }
+      } catch {
+        contentEl.insertBefore(
+          document.createTextNode('Something went wrong. Please try again.'),
+          cursor
+        );
+      } finally {
+        cursor.remove();
+        sendBtn.disabled = false;
+        setStatus('Ready', false);
+        inputEl.focus();
+      }
+    }
+
+    formEl.addEventListener('submit', e => {
+      e.preventDefault();
+      const text = inputEl.value.trim();
+      if (!text || sendBtn.disabled) return;
+      inputEl.value = '';
+      sendMessage(text);
+    });
+  </script>
+
+</body>
+</html>
