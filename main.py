@@ -1,5 +1,6 @@
 import uvicorn
 from app.app import app
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 
 if __name__ == "__main__":

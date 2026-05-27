@@ -13,8 +13,10 @@ __pycache__/
 .uv/
 
 # Data (generated — not committed)
-data/*.db
-data/faiss_index/
+data/
+*.db
+app/rag/faiss_vector_store/
+app/agent/graphs/
 
 # Brainstorming session files
 .superpowers/

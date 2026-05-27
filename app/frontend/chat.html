@@ -5,113 +5,142 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Parking Assistant</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --black: #0a0a0a;
-      --white: #f9f9f7;
-      --rule: #d8d8d4;
-      --font: 'Courier Prime', 'Courier New', monospace;
+      --bg:       #141414;
+      --term-bg:  #080808;
+      --border:   #2a2a2a;
+      --amber:    #e8e8e8;
+      --amber-dim:#444444;
+      --amber-mid:#999999;
+      --font: 'Share Tech Mono', 'Consolas', 'Menlo', monospace;
     }
 
     html, body {
-      height: 100%;
+      height: 75%;
+      background: var(--bg);
       font-family: var(--font);
-      background: var(--white);
-      color: var(--black);
     }
 
     body {
       display: flex;
-      flex-direction: column;
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 0 28px;
+      justify-content: center;
+      align-items: stretch;
+      padding: 28px 24px;
     }
 
-    /* ── Header ── */
-    header {
-      padding: 36px 0 20px;
-      border-bottom: 2px solid var(--black);
+    /* ── Terminal block ── */
+    .terminal {
+      width: 100%;
+      max-width: 940px;
+      height: 50vh;  
       display: flex;
-      justify-content: space-between;
-      align-items: baseline;
+      flex-direction: column;
+      background: var(--term-bg);
+      border: 1px solid var(--border);
+      margin-top: 120px; 
+    }
+
+    /* ── Title bar ── */
+    .titlebar {
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
     }
 
-    header h1 {
-      font-size: 11px;
-      letter-spacing: 0.22em;
+    .tb-title {
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 0.28em;
       text-transform: uppercase;
-      font-weight: 700;
+      color: var(--amber);
     }
 
-    #status {
-      font-size: 10px;
-      letter-spacing: 0.12em;
+    .tb-status {
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      opacity: 0.35;
-      transition: opacity 0.2s;
+      color: var(--amber);
     }
 
-    #status.active { opacity: 1; }
+    .tb-status.active { color: var(--amber); }
 
     /* ── Chat transcript ── */
     #chat {
       flex: 1;
       overflow-y: auto;
-      padding-bottom: 8px;
+      filter: grayscale(1);
+      padding: 20px 24px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
     }
 
-    #chat::-webkit-scrollbar { width: 0; }
+    #chat::-webkit-scrollbar { width: 3px; }
+    #chat::-webkit-scrollbar-track { background: transparent; }
+    #chat::-webkit-scrollbar-thumb { background: var(--border); }
 
     .message {
-      padding: 22px 0;
-      border-bottom: 1px solid var(--rule);
-      animation: appear 0.18s ease both;
+      display: flex;
+      gap: 10px;
+      animation: appear 0.12s ease both;
     }
 
     @keyframes appear {
-      from { opacity: 0; transform: translateY(5px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
-    .label {
-      font-size: 9px;
-      letter-spacing: 0.28em;
-      text-transform: uppercase;
-      font-weight: 700;
-      opacity: 0.35;
-      margin-bottom: 9px;
+    .prefix {
+      flex-shrink: 0;
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--amber-dim);
+      user-select: none;
     }
 
     .content {
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1.75;
       white-space: pre-wrap;
       word-break: break-word;
     }
 
-    .message.user .label,
+    /* AI — left aligned */
+    .message.assistant .prefix {
+      filter: grayscale(1);
+    }
+
+    .message.assistant .content {
+      color: var(--amber);
+    }
+
+    /* User — right aligned */
+    .message.user {
+      flex-direction: row-reverse;
+    }
+
     .message.user .content {
+      color: var(--amber);
       text-align: right;
     }
 
-    .message.user .content {
-      font-style: italic;
-    }
-
-    /* Streaming cursor */
+    /* Blinking block cursor */
     .cursor {
       display: inline-block;
-      width: 7px;
+      width: 8px;
       height: 14px;
-      background: var(--black);
+      background: var(--amber);
       margin-left: 2px;
       vertical-align: text-bottom;
-      animation: blink 0.75s step-end infinite;
+      animation: blink 1s step-end infinite;
     }
 
     @keyframes blink {
@@ -119,75 +148,63 @@
       50%       { opacity: 0; }
     }
 
-    /* ── Input ── */
-    footer {
+    /* ── Input row ── */
+    .input-row {
       flex-shrink: 0;
-      padding: 18px 0 32px;
-      border-top: 2px solid var(--black);
-    }
-
-    form {
+      border-top: 1px solid var(--border);
+      padding: 12px 24px;
       display: flex;
       align-items: baseline;
-      gap: 0;
+      gap: 10px;
+    }
+
+    .input-prompt {
+      font-size: 14px;
+      color: var(--amber-dim);
+      user-select: none;
+      flex-shrink: 0;
     }
 
     #input {
       flex: 1;
       font-family: var(--font);
       font-size: 14px;
-      line-height: 1.5;
-      padding: 10px 0;
-      border: none;
-      border-bottom: 1px solid var(--black);
       background: transparent;
-      color: var(--black);
+      border: none;
       outline: none;
+      color: var(--amber-mid);
+      caret-color: var(--amber);
       letter-spacing: 0.02em;
     }
 
-    #input::placeholder { opacity: 0.28; }
-
-    #send {
-      font-family: var(--font);
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      font-weight: 700;
-      padding: 10px 0 10px 22px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--black);
-      transition: opacity 0.15s;
-      white-space: nowrap;
-    }
-
-    #send:hover   { opacity: 0.45; }
-    #send:disabled { opacity: 0.18; cursor: default; }
+    #input::placeholder { color: var(--amber-dim); opacity: 0.55; }
+    #input:disabled     { opacity: 0.4; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Parking Assistant</h1>
-    <span id="status">Ready</span>
-  </header>
+  <div class="terminal">
 
-  <div id="chat"></div>
+    <div class="titlebar">
+      <span class="tb-title">CityPark Assistant</span>
+      <span id="status" class="tb-status">ready</span>
+    </div>
 
-  <footer>
-    <form id="form">
-      <input id="input" type="text" placeholder="Ask about parking, rates, availability…" autocomplete="off" autofocus />
-      <button id="send" type="submit">Send →</button>
-    </form>
-  </footer>
+    <div id="chat"></div>
+
+    <div class="input-row">
+      <span class="input-prompt">&gt;</span>
+      <form id="form" style="flex:1;display:flex;">
+        <input id="input" type="text" placeholder="ask about parking, rates, availability…" autocomplete="off" autofocus />
+      </form>
+    </div>
+
+  </div>
 
   <script>
-    const chatEl  = document.getElementById('chat');
-    const formEl  = document.getElementById('form');
-    const inputEl = document.getElementById('input');
-    const sendBtn = document.getElementById('send');
+    const chatEl   = document.getElementById('chat');
+    const formEl   = document.getElementById('form');
+    const inputEl  = document.getElementById('input');
     const statusEl = document.getElementById('status');
 
     const sessionId = localStorage.getItem('park_session') || crypto.randomUUID();
@@ -197,15 +214,15 @@
       const wrap = document.createElement('div');
       wrap.className = `message ${role}`;
 
-      const label = document.createElement('div');
-      label.className = 'label';
-      label.textContent = role === 'user' ? 'You' : 'Assistant';
+      const prefix = document.createElement('span');
+      prefix.className = 'prefix';
+      prefix.textContent = role === 'user' ? '>' : '🤖';
 
       const content = document.createElement('div');
       content.className = 'content';
       if (text) content.textContent = text;
 
-      wrap.appendChild(label);
+      wrap.appendChild(prefix);
       wrap.appendChild(content);
       chatEl.appendChild(wrap);
       chatEl.scrollTop = chatEl.scrollHeight;
@@ -225,8 +242,8 @@
       cursor.className = 'cursor';
       contentEl.appendChild(cursor);
 
-      sendBtn.disabled = true;
-      setStatus('Typing…', true);
+      inputEl.disabled = true;
+      setStatus('processing…', true);
 
       try {
         const res = await fetch('/chat', {
@@ -237,35 +254,17 @@
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split('\n');
-          buf = lines.pop();
-
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const chunk = line.slice(6);
-            if (chunk === '[DONE]') break;
-            contentEl.insertBefore(document.createTextNode(chunk), cursor);
-            chatEl.scrollTop = chatEl.scrollHeight;
-          }
-        }
+        const data = await res.json();
+        contentEl.insertBefore(document.createTextNode(data.reply), cursor);
       } catch {
         contentEl.insertBefore(
-          document.createTextNode('Something went wrong. Please try again.'),
+          document.createTextNode('connection error.'),
           cursor
         );
       } finally {
         cursor.remove();
-        sendBtn.disabled = false;
-        setStatus('Ready', false);
+        inputEl.disabled = false;
+        setStatus('ready', false);
         inputEl.focus();
       }
     }
@@ -273,7 +272,7 @@
     formEl.addEventListener('submit', e => {
       e.preventDefault();
       const text = inputEl.value.trim();
-      if (!text || sendBtn.disabled) return;
+      if (!text || inputEl.disabled) return;
       inputEl.value = '';
       sendMessage(text);
     });
