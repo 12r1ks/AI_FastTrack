@@ -1,11 +1,11 @@
 from llama_index.core import StorageContext, load_index_from_storage, Settings
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.faiss import FaissVectorStore
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-
-PERSIST_DIR = "app/rag/faiss_vector_store/"
+PERSIST_DIR = "app/db/faiss_vector_store/"
 
 Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+
 
 def load_index(persist_dir: str = PERSIST_DIR):
     vector_store = FaissVectorStore.from_persist_dir(persist_dir)
@@ -24,5 +24,5 @@ def retrieve(query: str, top_k: int = 4) -> list[str]:
 
 
 if __name__ == "__main__":
-    s=retrieve("Where can I park near the city center?")
+    s = retrieve("Where can I park near the city center?")
     print(s)

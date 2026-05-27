@@ -62,6 +62,16 @@ User → [Agent 1: RAG Chatbot] → [Agent 2: Admin Agent] → [MCP Server] → 
 
 @.claude/rules/langchain-langgraph.md
 @.claude/rules/fastapi.md
+@.claude/rules/llamaindex.md
+
+## Skills
+
+- `/check-stage-ready [N]` — verify stage N is complete before mentor submission (runs tests, checks all files)
+- `/sync-framework-rules [framework]` — fetch current docs and update `.claude/rules/<framework>.md`
+
+## Subagents
+
+- `test-writer` — writes pytest tests for a given module (invoke: "write tests for app/db/models.py")
 
 ## Commands
 

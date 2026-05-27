@@ -7,9 +7,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.faiss import FaissVectorStore
 
 SEED_PATH = "app/rag/seed_parking_info.md"
-INDEX_DIR = "app/rag/faiss_vector_store/"
-
-
+INDEX_DIR = "app/db/faiss_vector_store/"
 
 def load_documents(path: str):
     input_path = Path(path)
