@@ -8,10 +8,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 _checkpointer = InMemorySaver()
 agent = agent_builder.compile(checkpointer=_checkpointer)
 from langchain_core.messages import HumanMessage
-from datetime import datetime
 
-def getcurrentdaytime() -> str:
-    return datetime.now().strftime("[%Y-%m-%d %H:%M]")
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="app/frontend"), name="static")
@@ -28,7 +25,7 @@ class ChatRequest(BaseModel):
 async def chat(req: ChatRequest):
     config = {"configurable": {"thread_id": req.session_id}}
     result = await agent.ainvoke(
-        {"messages": [HumanMessage(content=getcurrentdaytime() + " " + req.message)]},
+        {"messages": [HumanMessage(content=req.message)]},
         config=config,
     )
     return {"reply": result["messages"][-1].content}
