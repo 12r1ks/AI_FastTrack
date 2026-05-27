@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from app.rag.retriever import retrieve
 from app.agent.Utils.SQLquery import query_available_spots
+from app.agent.Utils.state import MessagesState
 
 load_dotenv(override=True)
 
@@ -36,7 +37,10 @@ def price_calculator(Hours: int = 0, Days: int = 0) -> int:
 #-- RAG tool ---------------------------------------------------------------------------
 # This tool retrieves relevant information from (RAG) system based on a user's query.
 @tool("retrieve_data_from_RAG",
-      description="Retrieve data from the Retrieval-Augmented Generation system"
+      description=("Retrieve data from the Retrieval-Augmented Generation system"
+                   "Use it to get a better context about the company or "
+                   "anwer client's question"
+      )
       )
 def retrieve_rag_data1(query: str) -> str:
     retrieved_data = retrieve(query, top_k=2)
@@ -45,7 +49,10 @@ def retrieve_rag_data1(query: str) -> str:
 #-- Query available parking spots tool ------------------------------------------------
 # This tool queries the available parking spots based on location, time, and spot type.
 @tool("query_available_spots",
-      description="Query available parking spots based on location, time, and spot type"
+      description=(
+          "Query available parking spots based on location, time, and spot type. "
+          "To check if desired time slot is availiable for a user, or when client is asking "
+      )
       )
 async def query_available_spots_tool(
         location: Annotated[Literal["east", "central"], "Location of the parking lot"],
@@ -54,3 +61,26 @@ async def query_available_spots_tool(
         parking_spot_type: Annotated[Literal["A", "B", "T"], "Type of parking spot needed by a customer"]) -> str:
     spots = await query_available_spots(location, start_time, end_time, parking_spot_type)
     return f"Available spots: {spots}"
+
+#-- Store proposed resrvation info-----------------------------------------------------
+@tool("store_or_update_info_for_parking_proposal",
+      description="stores information for proposal_reservations in MessageState"
+)
+async def store_or_update_info_for_parking_proposal(
+    spot_id: Annotated[str, "parking spot ID"],
+    location: Annotated[Literal["east", "central"], "Location of the parking lot"],
+    clients_name: Annotated[str, "Clients Full Name"],
+    car_number: str,
+    start_dt: Annotated[str, "start-parking date in YYYY-MM-DD HH:MM format"],
+    end_dt: Annotated[str, "end-parking date in YYYY-MM-DD HH:MM format"],
+):
+    proposed_reservation = {
+        "spot_id": spot_id,
+        "location": location,
+        "clients_name": clients_name,
+        "car_number": car_number,
+        "start_dt": start_dt,
+        "end_dt": end_dt
+        }
+    
+    return str(proposed_reservation)
