@@ -16,6 +16,7 @@ __pycache__/
 data/
 *.db
 app/rag/faiss_vector_store/
+app/db/faiss_vector_store/
 app/agent/graphs/
 
 # Brainstorming session files
@@ -28,3 +29,6 @@ app/agent/graphs/
 # OS
 .DS_Store
 Thumbs.db
+
+#othher
+feedback.md

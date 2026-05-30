@@ -1,9 +1,8 @@
 from collections.abc import AsyncGenerator
-import uuid
 
-from sqlalchemy import Column, Float, Float, Integer, PrimaryKeyConstraint, String, DateTime, ForeignKey
+from sqlalchemy import Column, Float, Integer, PrimaryKeyConstraint, String, ForeignKey
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase, declarative_base, relationship
+from sqlalchemy.orm import DeclarativeBase, relationship
 
 DATABASE_URL = "sqlite+aiosqlite:///./app/db/Dynamic_SQLite_DB.db"
 
@@ -52,7 +51,6 @@ async def create_db_and_tables():
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         yield session
-
 
 if __name__ == "__main__":
     import asyncio

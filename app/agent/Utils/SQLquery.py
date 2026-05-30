@@ -1,13 +1,12 @@
 import asyncio
-from datetime import datetime
 from sqlalchemy import select, and_
 from app.SQLite.db import async_session, Spot, Booking
 from typing_extensions import Literal, Annotated
 
 async def query_booked_spots(
         location: Annotated[Literal["east","central"],"Location of the parking lot"],
-        start_time: datetime,
-        end_time: datetime,
+        start_time: str,
+        end_time: str,
         parking_spot_type: Annotated[Literal["A", "B", "T"], "Type of parking spot"]
         ):
     
@@ -31,8 +30,8 @@ async def query_booked_spots(
 
 async def query_available_spots(
         location: Annotated[Literal["east","central"],"Location of the parking lot"],
-        start_time: datetime,
-        end_time: datetime,
+        start_time: str,
+        end_time: str,
         parking_spot_type: Annotated[Literal["A", "B", "T"], "Type of parking spot"]
         ):
     async with async_session() as session:
