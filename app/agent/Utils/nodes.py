@@ -1,10 +1,12 @@
 import re
 from datetime import datetime
-from langchain_core.messages import SystemMessage, ToolMessage, AIMessage
+from langchain_core.messages import SystemMessage, ToolMessage, AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 from typing_extensions import Literal
+from langgraph.types import interrupt
 from app.agent.Utils.state import MessagesState
-from app.agent.Utils.tools import get_llm, retrieve_rag_data1, query_available_spots_tool, price_calculator, store_or_update_info_for_parking_proposal
+from app.agent.Utils.tools import (get_llm, retrieve_rag_data1, query_available_spots_tool,
+                                   price_calculator, store_or_update_info_for_parking_proposal)
 
 def getcurrentdaytime() -> str:
     return datetime.now().strftime("[%Y-%m-%d %H:%M]")
@@ -72,12 +74,14 @@ def llm_call(state: MessagesState) -> MessagesState:
                             f"Current date and time: {getcurrentdaytime()}\n\n"
                             "## Role\n"
                             "You are CityPark Assistant, a helpful parking reservation chatbot. "
-                            "You help users find parking, check availability, calculate prices, and submit reservation requests.\n\n"
+                            "You help users find parking, check availability, calculate prices, and submit reservation requests. \n\n"
+                            "If you have a proposal for a reservation and its details double checked with a user, "
+                            "Send it to the administrator for approval.\n\n"
                             "## Goals\n"
                             "- Answer questions about parking locations, hours, and rates using the RAG tool.\n"
                             "- Check spot availability using the availability tool.\n"
                             "- Don't invent data. Answer questions based on Company Information by using RAG tool\n"
-                            "- Collect reservation details (name, car number, location, dates) and store them using the reservation tool.\n"
+                            "- Collect reservation details (name, car number, location, dates, phone number) and store them using the reservation tool.\n"
                             "- Be concise and accurate. Do not confirm reservations — they require admin approval.\n"
                             "- Reply in plain text only. No markdown: no headers, no bullet points, no bold, no lists.\n\n"
                             "## Current Session State\n"
@@ -103,20 +107,22 @@ async def tool_node(state: MessagesState):
             observation = await tool.ainvoke(tool_call["args"])
             if tool_call["name"] == "store_or_update_info_for_parking_proposal":
                 updates["proposed_reservation"] = dict(tool_call["args"])
+                updates["reservation_status"] = "pending administrator review"
         except Exception as e:
             observation = f"Tool error: {e}"
         result.append(ToolMessage(content=observation, tool_call_id=tool_call["id"]))
     return {"messages": result, **updates}
 
 #   Conditional edge for tool Node
-def should_continue(state: MessagesState) -> Literal["tool_node", "pre_end_guard"]:
+def should_continue(state: MessagesState) -> Literal["tool_node", "pre_end_guard", "admin"]:
     last_message = state["messages"][-1]
     if hasattr(last_message, "tool_calls") and last_message.tool_calls:
         if state.get('llm_calls',0)>=10:
             return "pre_end_guard"
         return  "tool_node"
+    if state.get('reservation_status') == "pending administrator review":
+        return "sub_agen_admin"
     return "pre_end_guard"
-
 
 #───Output_guard_node────────────────────────────────────────────────────
 _PHONE_RE = re.compile(r"(?<![\d-])\+\d[\d\s\-\(\)]{6,14}\d(?!\d)|(?<!\d)\d{10,15}(?!\d)")
@@ -137,6 +143,7 @@ def pre_end_guard(state: MessagesState) -> dict:
 #───Initialization Node────────────────────────────────────────────────────
 def init_node(state: MessagesState) -> dict:
       return {"llm_calls": 0}
+
 
     
 

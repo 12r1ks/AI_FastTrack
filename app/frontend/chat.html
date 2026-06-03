@@ -245,6 +245,7 @@
       inputEl.disabled = true;
       setStatus('processing…', true);
 
+      let pending = false;
       try {
         const res = await fetch('/chat', {
           method: 'POST',
@@ -255,7 +256,12 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
-        contentEl.insertBefore(document.createTextNode(data.reply), cursor);
+        if (data.pending) {
+          pending = true;                          // no message yet — wait for the graph to finish
+          contentEl.closest('.message').remove();  // drop the empty assistant bubble
+        } else {
+          contentEl.insertBefore(document.createTextNode(data.reply), cursor);
+        }
       } catch {
         contentEl.insertBefore(
           document.createTextNode('connection error.'),
@@ -264,7 +270,7 @@
       } finally {
         cursor.remove();
         inputEl.disabled = false;
-        setStatus('ready', false);
+        setStatus(pending ? 'awaiting approval' : 'ready', pending);
         inputEl.focus();
       }
     }
@@ -276,6 +282,22 @@
       inputEl.value = '';
       sendMessage(text);
     });
+
+    // Pick up async messages pushed after an admin decision.
+    async function pollUpdates() {
+      try {
+        const res = await fetch(`/chat/poll?session_id=${encodeURIComponent(sessionId)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.messages.length) {
+          for (const msg of data.messages) addMessage('assistant', msg);
+          setStatus('ready', false);
+        }
+      } catch {}
+    }
+    setInterval(pollUpdates, 4000);
+    // Background tabs throttle setInterval, so also poll the moment the tab is refocused.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pollUpdates(); });
   </script>
 
 </body>

@@ -43,7 +43,7 @@ On first run this will:
 3. Create and seed the SQLite database
 4. Start the server at `http://localhost:8000`
 
-Open `http://localhost:8000` for the chat UI.
+Open `http://localhost:8000` for the chat UI, and `http://localhost:8000/admin` for the admin panel — where pending reservation requests are reviewed and approved or rejected (the user's chat is notified of the decision automatically).
 
 ## Test
 
@@ -77,4 +77,4 @@ Static parking info is retrieved via FAISS (LlamaIndex). Live availability comes
 
 ## Switching LLM providers
 
-Set `LLM_PROVIDER=openai` in `.env` and provide `OPENAI_API_KEY`. Defaults to Anthropic (`claude-haiku-20240930`).
+Set `LLM_PROVIDER=openai` in `.env` and provide `OPENAI_API_KEY`. Defaults to Anthropic (`claude-haiku-4-5-20251001`).

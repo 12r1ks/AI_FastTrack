@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #141414;
+      --term-bg:  #080808;
+      --border:   #2a2a2a;
+      --amber:    #e8e8e8;
+      --amber-dim:#444444;
+      --amber-mid:#999999;
+      --font: 'Share Tech Mono', 'Consolas', 'Menlo', monospace;
+    }
+
+    html, body {
+      height: 75%;
+      background: var(--bg);
+      font-family: var(--font);
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 28px 24px;
+    }
+
+    /* ── Terminal block ── */
+    .terminal {
+      width: 100%;
+      max-width: 940px;
+      height: 50vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--term-bg);
+      border: 1px solid var(--border);
+      margin-top: 120px;
+    }
+
+    /* ── Title bar ── */
+    .titlebar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tb-title {
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--amber);
+    }
+
+    .tb-status {
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--amber);
+    }
+
+    .tb-status.active { color: var(--amber); }
+
+    /* ── Chat transcript ── */
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      filter: grayscale(1);
+      padding: 20px 24px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    #chat::-webkit-scrollbar { width: 3px; }
+    #chat::-webkit-scrollbar-track { background: transparent; }
+    #chat::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .message {
+      display: flex;
+      gap: 10px;
+      animation: appear 0.12s ease both;
+    }
+
+    @keyframes appear {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .prefix {
+      flex-shrink: 0;
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--amber-dim);
+      user-select: none;
+    }
+
+    .content {
+      font-size: 14px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message.assistant .prefix { filter: grayscale(1); }
+    .message.assistant .content { color: var(--amber); }
+
+    .message.user { flex-direction: row-reverse; }
+    .message.user .content { color: var(--amber); text-align: right; }
+
+    /* ── Input row ── */
+    .input-row {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .input-prompt {
+      font-size: 14px;
+      color: var(--amber-dim);
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    #input {
+      flex: 1;
+      font-family: var(--font);
+      font-size: 14px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--amber-mid);
+      caret-color: var(--amber);
+      letter-spacing: 0.02em;
+    }
+
+    #input::placeholder { color: var(--amber-dim); opacity: 0.55; }
+    #input:disabled     { opacity: 0.4; }
+
+    /* ── Action row ── */
+    .action-row {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .action-row button {
+      font-family: var(--font);
+      font-size: 14px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--amber-mid);
+      padding: 6px 24px;
+      cursor: pointer;
+      transition: border-color 0.1s, color 0.1s;
+    }
+
+    #btn-approve:hover { border-color: #e8e8e8; color: #e8e8e8; }
+    #btn-reject:hover  { border-color: #666;    color: #aaa; }
+
+    button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="terminal">
+
+    <div class="titlebar">
+      <span class="tb-title">Admin Panel</span>
+      <span id="status" class="tb-status">ready</span>
+    </div>
+
+    <div id="chat"></div>
+
+    <div class="input-row">
+      <span class="input-prompt">&gt;</span>
+      <form id="form" style="flex:1;display:flex;">
+        <input id="input" type="text" placeholder="add a note…" autocomplete="off" />
+      </form>
+    </div>
+
+    <div class="action-row">
+      <button id="btn-approve" disabled>Approve</button>
+      <button id="btn-reject"  disabled>Reject</button>
+    </div>
+
+  </div>
+
+  <script>
+    const chatEl     = document.getElementById('chat');
+    const statusEl   = document.getElementById('status');
+    const formEl     = document.getElementById('form');
+    const inputEl    = document.getElementById('input');
+    const btnApprove = document.getElementById('btn-approve');
+    const btnReject  = document.getElementById('btn-reject');
+
+    let currentSessionId = null;
+
+    function addMessage(role, text) {
+      const wrap = document.createElement('div');
+      wrap.className = `message ${role}`;
+
+      const prefix = document.createElement('span');
+      prefix.className = 'prefix';
+      prefix.textContent = role === 'user' ? '>' : '🤖';
+
+      const content = document.createElement('div');
+      content.className = 'content';
+      content.textContent = text;
+
+      wrap.appendChild(prefix);
+      wrap.appendChild(content);
+      chatEl.appendChild(wrap);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function setStatus(text, active = false) {
+      statusEl.textContent = text;
+      statusEl.classList.toggle('active', active);
+    }
+
+    function renderReservation(r) {
+      const lines = [
+        `Name:   ${r.clients_name}`,
+        `Car:    ${r.car_number}`,
+        `Phone:  ${r.phone_number}`,
+        `Spot:   ${r.spot_id} (${r.location})`,
+        `From:   ${r.start_dt}`,
+        `To:     ${r.end_dt}`,
+        `Price:  €${r.price}`,
+      ];
+      addMessage('assistant', 'New reservation request:\n' + lines.join('\n'));
+    }
+
+    async function loadPending() {
+      if (currentSessionId) return;   // already reviewing one — don't clobber it
+      try {
+        const res = await fetch('/admin/pending');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const pending = await res.json();
+
+        if (!pending.length) {
+          setStatus('no pending');
+          return;
+        }
+
+        const session = pending[0];
+        currentSessionId = session.session_id;
+        renderReservation(session.proposed_reservation || {});
+
+        btnApprove.disabled = false;
+        btnReject.disabled  = false;
+        setStatus('pending review', true);
+      } catch {
+        setStatus('error loading');
+      }
+    }
+
+    async function sendDecision(decision) {
+      const reason = inputEl.value.trim();
+      btnApprove.disabled = true;
+      btnReject.disabled  = true;
+      inputEl.value = '';
+      setStatus('processing…', true);
+
+      try {
+        const res = await fetch('/admin/decision', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: currentSessionId, decision, reason }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        setStatus(decision === 'approved' ? 'approved' : 'rejected');
+        currentSessionId = null;
+        chatEl.innerHTML = '';   // next poll loads the next pending item
+      } catch {
+        setStatus('error');
+        btnApprove.disabled = false;
+        btnReject.disabled  = false;
+      }
+    }
+
+    // The input is an optional note; it's read as `reason` by Approve/Reject.
+    // Enter just prevents a page reload — it does not submit on its own.
+    formEl.addEventListener('submit', e => e.preventDefault());
+
+    btnApprove.addEventListener('click', () => sendDecision('approved'));
+    btnReject.addEventListener('click',  () => sendDecision('rejected'));
+
+    loadPending();
+    setInterval(loadPending, 4000);
+  </script>
+
+</body>
+</html>

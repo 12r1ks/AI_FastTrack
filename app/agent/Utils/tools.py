@@ -13,7 +13,7 @@ def get_llm():
     provider = os.getenv("LLM_PROVIDER", "anthropic")
     if provider == "openai":
         return init_chat_model(model="gpt-4o", temperature=0.1)
-    return init_chat_model(model="claude-haiku-20240930", temperature=0.1)
+    return init_chat_model(model="claude-haiku-4-5-20251001", temperature=0.1)
 
 # ── Price calculator tool ────────────────────────────────────────────────────
 @tool("Price_Calculator",
@@ -38,7 +38,7 @@ def price_calculator(Hours: int = 0, Days: int = 0, Price_Per_Hour: float = 0, P
         raise ValueError("No price per hour for price calculation")
     if Days > 0 and Price_Per_Day == 0:
         raise ValueError("No price per day for price calculation")
-    
+
     return (Hours * Price_Per_Hour) + (Days * Price_Per_Day)
 
 # ── RAG tool ─────────────────────────────────────────────────────────────────
@@ -69,7 +69,11 @@ async def query_available_spots_tool(
 
 # ── Store reservation proposal tool ──────────────────────────────────────────
 @tool("store_or_update_info_for_parking_proposal",
-      description="Store the user's reservation details once all required information has been collected."
+      description=(
+          "Call this tool only when all reservation details have been collected and confirmed by the user. "
+          "Before calling, present a clear summary of the details to the user and ask for explicit confirmation. "
+          "Once called, the reservation is flagged for administrator review — the user should be informed it is pending approval."
+      )
 )
 async def store_or_update_info_for_parking_proposal(
     spot_id: Annotated[str, "parking spot ID"],
@@ -90,7 +94,7 @@ async def store_or_update_info_for_parking_proposal(
         raise ValueError("phone_number cannot be empty")
     if not price:
         raise ValueError("price cannot be empty")
-    if price<0:
+    if price < 0:
         raise ValueError("price cannot be negative")
     try:
         start = datetime.strptime(start_dt, "%Y-%m-%d %H:%M")
@@ -101,9 +105,8 @@ async def store_or_update_info_for_parking_proposal(
         raise ValueError("start_dt must be before end_dt")
     if start <= datetime.now():
         raise ValueError("start_dt must be in the future")
-    
 
-    proposed_reservation = {
+    return str({
         "spot_id": spot_id,
         "location": location,
         "clients_name": clients_name,
@@ -111,7 +114,5 @@ async def store_or_update_info_for_parking_proposal(
         "phone_number": phone_number,
         "start_dt": start_dt,
         "end_dt": end_dt,
-        "price": price
-        }
-
-    return str(proposed_reservation)
+        "price": price,
+    })

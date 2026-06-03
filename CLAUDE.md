@@ -18,7 +18,7 @@ A parking space reservation chatbot built in Python using LangChain, LangGraph, 
 - **Vector DB**: FAISS via LlamaIndex (`llama-index-vector-stores-faiss`) — **not** `langchain-community`
 - **Embeddings**: HuggingFace `BAAI/bge-small-en-v1.5` (local, no API key needed)
 - **Relational DB**: SQLite (async via SQLAlchemy + aiosqlite)
-- **LLM**: Anthropic (`claude-haiku-20240930`) / OpenAI (`gpt-4o`) — switchable via `LLM_PROVIDER` env var
+- **LLM**: Anthropic (`claude-haiku-4-5-20251001`) / OpenAI (`gpt-4o`) — switchable via `LLM_PROVIDER` env var
 - **Frontend**: Vanilla HTML/JS served by FastAPI (`app/frontend/chat.html`, `app/frontend/admin.html`)
 - **Testing**: pytest + pytest-asyncio (`asyncio_mode = "auto"`)
 - **Eval**: RAGAS (`eval/` directory, requires `OPENAI_API_KEY`)
