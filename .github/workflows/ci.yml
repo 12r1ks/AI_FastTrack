@@ -20,6 +20,12 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Cache HuggingFace embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ runner.os }}-bge-small-en-v1.5
+
       - name: Build FAISS index and database
         run: |
           uv run python -m app.rag.indexing
@@ -27,6 +33,7 @@ jobs:
           uv run python -m app.SQLite.seed_db
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
 
       - name: Run tests
         run: uv run pytest
