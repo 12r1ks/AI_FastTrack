@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parking Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #141414;
+      --term-bg:  #080808;
+      --border:   #2a2a2a;
+      --amber:    #e8e8e8;
+      --amber-dim:#444444;
+      --amber-mid:#999999;
+      --font: 'Share Tech Mono', 'Consolas', 'Menlo', monospace;
+    }
+
+    html, body {
+      height: 75%;
+      background: var(--bg);
+      font-family: var(--font);
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 28px 24px;
+    }
+
+    /* ── Terminal block ── */
+    .terminal {
+      width: 100%;
+      max-width: 940px;
+      height: 50vh;  
+      display: flex;
+      flex-direction: column;
+      background: var(--term-bg);
+      border: 1px solid var(--border);
+      margin-top: 120px; 
+    }
+
+    /* ── Title bar ── */
+    .titlebar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tb-title {
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--amber);
+    }
+
+    .tb-status {
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--amber);
+    }
+
+    .tb-status.active { color: var(--amber); }
+
+    /* ── Chat transcript ── */
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      filter: grayscale(1);
+      padding: 20px 24px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    #chat::-webkit-scrollbar { width: 3px; }
+    #chat::-webkit-scrollbar-track { background: transparent; }
+    #chat::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .message {
+      display: flex;
+      gap: 10px;
+      animation: appear 0.12s ease both;
+    }
+
+    @keyframes appear {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .prefix {
+      flex-shrink: 0;
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--amber-dim);
+      user-select: none;
+    }
+
+    .content {
+      font-size: 14px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* AI — left aligned */
+    .message.assistant .prefix {
+      filter: grayscale(1);
+    }
+
+    .message.assistant .content {
+      color: var(--amber);
+    }
+
+    /* User — right aligned */
+    .message.user {
+      flex-direction: row-reverse;
+    }
+
+    .message.user .content {
+      color: var(--amber);
+      text-align: right;
+    }
+
+    /* Blinking block cursor */
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--amber);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    /* ── Input row ── */
+    .input-row {
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .input-prompt {
+      font-size: 14px;
+      color: var(--amber-dim);
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    #input {
+      flex: 1;
+      font-family: var(--font);
+      font-size: 14px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--amber-mid);
+      caret-color: var(--amber);
+      letter-spacing: 0.02em;
+    }
+
+    #input::placeholder { color: var(--amber-dim); opacity: 0.55; }
+    #input:disabled     { opacity: 0.4; }
+  </style>
+</head>
+<body>
+
+  <div class="terminal">
+
+    <div class="titlebar">
+      <span class="tb-title">CityPark Assistant</span>
+      <span id="status" class="tb-status">ready</span>
+    </div>
+
+    <div id="chat"></div>
+
+    <div class="input-row">
+      <span class="input-prompt">&gt;</span>
+      <form id="form" style="flex:1;display:flex;">
+        <input id="input" type="text" placeholder="ask about parking, rates, availability…" autocomplete="off" autofocus />
+      </form>
+    </div>
+
+  </div>
+
+  <script>
+    const chatEl   = document.getElementById('chat');
+    const formEl   = document.getElementById('form');
+    const inputEl  = document.getElementById('input');
+    const statusEl = document.getElementById('status');
+
+    const sessionId = localStorage.getItem('park_session') || crypto.randomUUID();
+    localStorage.setItem('park_session', sessionId);
+
+    function addMessage(role, text = '') {
+      const wrap = document.createElement('div');
+      wrap.className = `message ${role}`;
+
+      const prefix = document.createElement('span');
+      prefix.className = 'prefix';
+      prefix.textContent = role === 'user' ? '>' : '🤖';
+
+      const content = document.createElement('div');
+      content.className = 'content';
+      if (text) content.textContent = text;
+
+      wrap.appendChild(prefix);
+      wrap.appendChild(content);
+      chatEl.appendChild(wrap);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      return content;
+    }
+
+    function setStatus(text, active = false) {
+      statusEl.textContent = text;
+      statusEl.classList.toggle('active', active);
+    }
+
+    async function sendMessage(text) {
+      addMessage('user', text);
+
+      const contentEl = addMessage('assistant');
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      contentEl.appendChild(cursor);
+
+      inputEl.disabled = true;
+      setStatus('processing…', true);
+
+      let pending = false;
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId, message: text }),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        if (data.pending) {
+          pending = true;                          // no message yet — wait for the graph to finish
+          contentEl.closest('.message').remove();  // drop the empty assistant bubble
+        } else {
+          contentEl.insertBefore(document.createTextNode(data.reply), cursor);
+        }
+      } catch {
+        contentEl.insertBefore(
+          document.createTextNode('connection error.'),
+          cursor
+        );
+      } finally {
+        cursor.remove();
+        inputEl.disabled = false;
+        setStatus(pending ? 'awaiting approval' : 'ready', pending);
+        inputEl.focus();
+      }
+    }
+
+    formEl.addEventListener('submit', e => {
+      e.preventDefault();
+      const text = inputEl.value.trim();
+      if (!text || inputEl.disabled) return;
+      inputEl.value = '';
+      sendMessage(text);
+    });
+
+    // Pick up async messages pushed after an admin decision.
+    async function pollUpdates() {
+      try {
+        const res = await fetch(`/chat/poll?session_id=${encodeURIComponent(sessionId)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.messages.length) {
+          for (const msg of data.messages) addMessage('assistant', msg);
+          setStatus('ready', false);
+        }
+      } catch {}
+    }
+    setInterval(pollUpdates, 4000);
+    // Background tabs throttle setInterval, so also poll the moment the tab is refocused.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pollUpdates(); });
+  </script>
+
+</body>
+</html>

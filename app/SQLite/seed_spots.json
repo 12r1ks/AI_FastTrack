@@ -1,0 +1,20 @@
+[
+  { "id": "A1", "location": "central", "type": "standard", "hourly_rate": 2.50, "daily_rate": 15.00 },
+  { "id": "A2", "location": "central", "type": "standard", "hourly_rate": 2.50, "daily_rate": 15.00 },
+  { "id": "A3", "location": "central", "type": "standard", "hourly_rate": 2.50, "daily_rate": 15.00 },
+  { "id": "A4", "location": "central", "type": "standard", "hourly_rate": 2.50, "daily_rate": 15.00 },
+  { "id": "A5", "location": "central", "type": "standard", "hourly_rate": 2.50, "daily_rate": 15.00 },
+  { "id": "B1", "location": "central", "type": "premium",  "hourly_rate": 4.00, "daily_rate": 22.00 },
+  { "id": "B2", "location": "central", "type": "premium",  "hourly_rate": 4.00, "daily_rate": 22.00 },
+  { "id": "B3", "location": "central", "type": "premium",  "hourly_rate": 4.00, "daily_rate": 22.00 },
+  { "id": "A1", "location": "east",    "type": "standard", "hourly_rate": 2.00, "daily_rate": 12.00 },
+  { "id": "A2", "location": "east",    "type": "standard", "hourly_rate": 2.00, "daily_rate": 12.00 },
+  { "id": "A3", "location": "east",    "type": "standard", "hourly_rate": 2.00, "daily_rate": 12.00 },
+  { "id": "B1", "location": "east",    "type": "premium",  "hourly_rate": 3.50, "daily_rate": 20.00 },
+  { "id": "B2", "location": "east",    "type": "premium",  "hourly_rate": 3.50, "daily_rate": 20.00 },
+  { "id": "T1", "location": "east",    "type": "truck",    "hourly_rate": 6.00, "daily_rate": 35.00 },
+  { "id": "T2", "location": "east",    "type": "truck",    "hourly_rate": 6.00, "daily_rate": 35.00 },
+  { "id": "T3", "location": "east",    "type": "truck",    "hourly_rate": 6.00, "daily_rate": 35.00 },
+  { "id": "T4", "location": "east",    "type": "truck",    "hourly_rate": 6.00, "daily_rate": 35.00 },
+  { "id": "T5", "location": "east",    "type": "truck",    "hourly_rate": 6.00, "daily_rate": 35.00 }
+]
