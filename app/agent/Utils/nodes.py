@@ -3,7 +3,6 @@ from datetime import datetime
 from langchain_core.messages import SystemMessage, ToolMessage, AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 from typing_extensions import Literal
-from langgraph.types import interrupt
 from app.agent.Utils.state import MessagesState
 from app.agent.Utils.tools import (get_llm, retrieve_rag_data1, query_available_spots_tool,
                                    price_calculator, store_or_update_info_for_parking_proposal)
