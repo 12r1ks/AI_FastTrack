@@ -3,7 +3,6 @@ from datetime import datetime
 from langchain_core.messages import SystemMessage, ToolMessage, AIMessage, HumanMessage
 from pydantic import BaseModel, Field
 from typing_extensions import Literal
-from langgraph.types import interrupt
 from app.agent.Utils.state import MessagesState
 from app.agent.Utils.tools import (get_llm, retrieve_rag_data1, query_available_spots_tool,
                                    price_calculator, store_or_update_info_for_parking_proposal)
@@ -24,9 +23,9 @@ class RouteDecision(BaseModel):
         description="Decide which node to go")
 
 #   For conditional Edge
-def guard_route(state: MessagesState) -> Literal["llm_call", "reject"]:
+async def guard_route(state: MessagesState) -> Literal["llm_call", "reject"]:
     structured = model.with_structured_output(RouteDecision)
-    result = structured.invoke(
+    result = await structured.ainvoke(
         [
             SystemMessage(content=(
                 "You are a security guard for a parking reservation chatbot. "
@@ -63,11 +62,11 @@ def reject_node(state: MessagesState) -> dict:
 
 #───LLM call, central llm Node────────────────────────────────────────────
 #   Answer user's question by using tools. Propose reservation.
-def llm_call(state: MessagesState) -> MessagesState:
-    
+async def llm_call(state: MessagesState) -> MessagesState:
+
     return {
         "messages": [
-            model_with_tools.invoke(
+            await model_with_tools.ainvoke(
                 [
                     SystemMessage(
                         content=(

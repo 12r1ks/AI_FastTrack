@@ -36,6 +36,8 @@ class Booking(Base):
     end_dt       = Column(String,  nullable=False)     # YYYY-MM-DD HH:MM
     status       = Column(String,  nullable=False)     # approved | cancelled
     created_at   = Column(String,  nullable=False)     # YYYY-MM-DD HH:MM
+    phone        = Column(String,  nullable=True)      # client phone
+    price        = Column(Float,   nullable=True)      # reservation cost
 
     spot = relationship("Spot", back_populates="bookings")
 

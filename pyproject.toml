@@ -24,6 +24,9 @@ dependencies = [
     "ragas>=0.4",
     "pandas>=2.0",
     "matplotlib>=3.10.9",
+    "langchain-mcp-adapters>=0.2.2",
+    "fastmcp>=3.4.0",
+    "locust>=2.44.1",
 ]
 
 [tool.pytest.ini_options]

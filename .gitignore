@@ -8,6 +8,7 @@ __pycache__/
 *.pyd
 .Python
 
+
 # uv / venv
 .venv/
 .uv/
@@ -18,6 +19,10 @@ data/
 app/rag/faiss_vector_store/
 app/db/faiss_vector_store/
 app/agent/graphs/
+
+# LangGraph dev runtime (rewritten constantly — causes `langgraph dev` reload loops if watched)
+.langgraph_api/
+*.pckl
 
 # Brainstorming session files
 .superpowers/
@@ -30,5 +35,5 @@ app/agent/graphs/
 .DS_Store
 Thumbs.db
 
-#othher
+#other
 feedback.md
