@@ -11,7 +11,6 @@ class MessagesState(TypedDict):
     session_id: NotRequired[str]
     proposed_reservation: NotRequired[dict]
     approved_reservation: NotRequired[dict]
-    is_admin: NotRequired[bool]
     reservation_status: NotRequired[Literal["pending administrator review",
                                             "approved", "rejected",
                                             "rejected with follow-up"]]

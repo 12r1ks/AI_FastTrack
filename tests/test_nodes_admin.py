@@ -121,6 +121,7 @@ async def test_tool_node_adm_handles_tool_error_gracefully():
     msg = result["message_admin"][0]
     assert isinstance(msg, ToolMessage)
     assert "Tool error" in msg.content
+    assert result["reservation_status"] == "rejected"   # error flips status to rejected
 
 
 @pytest.mark.asyncio

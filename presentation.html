@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CityPark Assistant — AI FastTrack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --paper:  #faf8f2;
+    --ink:    #26231f;
+    --muted:  #6d685f;
+    --accent: #b4531f;        /* warm terracotta */
+    --line:   #e3ddd0;
+    --soft:   #f1ece1;
+    --sans:   'Atkinson Hyperlegible', system-ui, sans-serif;
+    --mono:   'JetBrains Mono', monospace;
+  }
+
+  html, body { height: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    display: flex; align-items: center; justify-content: center;
+    height: 100vh; overflow: hidden;
+    line-height: 1.55;
+  }
+
+  .deck {
+    width: min(900px, 92vw);
+    height: min(620px, 88vh);
+    display: flex; flex-direction: column;
+  }
+
+  /* top bar */
+  .bar {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding-bottom: 14px; border-bottom: 2px solid var(--ink);
+    font-size: 13px; color: var(--muted);
+  }
+  .bar b { color: var(--ink); }
+  .bar .accent { color: var(--accent); font-weight: 700; }
+  .navhint { font-family: var(--mono); font-size: 11px;
+             color: var(--muted); letter-spacing: .04em; }
+  .bar-left { display: flex; flex-direction: column; gap: 6px; }
+  .subrow { display: flex; align-items: center; gap: 12px; }
+
+  .stage { position: relative; flex: 1; }
+
+  .slide { position: absolute; inset: 0; padding: 30px 4px 0; display: none; flex-direction: column; }
+  .slide.active { display: flex; }
+
+  .num { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: .05em; }
+  h1 { font-size: clamp(28px, 4.2vw, 40px); letter-spacing: -.01em; margin: 2px 0 8px; }
+  .lede { color: var(--muted); font-size: 15.5px; max-width: 66ch; margin-bottom: 22px; }
+
+  /* simple reveal */
+  .slide.active .r { animation: fade .4s ease both; }
+  .slide.active .r:nth-child(2){animation-delay:.05s}
+  .slide.active .r:nth-child(3){animation-delay:.10s}
+  .slide.active .r:nth-child(4){animation-delay:.16s}
+  .slide.active .r:nth-child(5){animation-delay:.22s}
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* pipeline of boxes */
+  .pipe { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box {
+    border: 1.5px solid var(--ink); border-radius: 8px; padding: 12px 14px;
+    background: #fff; min-width: 130px;
+  }
+  .box .t { font-family: var(--mono); font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; }
+  .box .h { font-weight: 700; font-size: 16px; margin-top: 2px; }
+  .box .s { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .to { color: var(--accent); font-family: var(--mono); font-size: 20px; font-weight: 500; }
+
+  .note { margin-top: 20px; font-size: 14px; color: var(--ink); }
+  .note .k { font-family: var(--mono); color: var(--accent); }
+  .note + .note { margin-top: 8px; }
+
+  /* two-up sections */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .card { border: 1.5px solid var(--line); border-radius: 10px; padding: 18px; background: #fff; }
+  .card h2 { font-size: 18px; }
+  .card .role { font-family: var(--mono); font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; margin: 2px 0 12px; }
+  .card pre {
+    font-family: var(--mono); font-size: 12px; background: var(--soft);
+    border-radius: 6px; padding: 10px 12px; line-height: 1.6; white-space: pre; overflow-x: auto;
+    color: var(--ink); margin-bottom: 12px;
+  }
+  .card pre b { color: var(--accent); font-weight: 500; }
+  ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  ul li { font-size: 13.5px; padding-left: 16px; position: relative; }
+  ul li::before { content: "•"; color: var(--accent); position: absolute; left: 2px; }
+  ul li b { color: var(--ink); }
+  .muted { color: var(--muted); }
+  code { font-family: var(--mono); font-size: .9em; color: var(--accent); }
+
+  /* infrastructure slide */
+  .infra { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 22px; margin-top: 16px; align-items: start; }
+  .infra-img img { max-width: 100%; max-height: 400px; border: 1.5px solid var(--line); border-radius: 8px; }
+  .infra-nodes .grp { font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+                      letter-spacing: .08em; color: var(--accent); margin: 0 0 6px; }
+  .infra-nodes dl { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; row-gap: 5px; margin-bottom: 14px; }
+  .infra-nodes dt { font-family: var(--mono); font-size: 12px; color: var(--ink); }
+  .infra-nodes dd { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+  /* app screenshots slide */
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 18px; }
+  .shots figure { display: flex; flex-direction: column; gap: 10px; }
+  .shots img { width: 100%; border: 1.5px solid var(--line); border-radius: 8px; }
+  .shots figcaption { font-size: 12.5px; color: var(--muted); text-align: center; }
+  .shots figcaption b { color: var(--accent); }
+
+  /* stage 1 tools grid */
+  .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  .tool { border: 1.5px solid var(--line); border-radius: 8px; padding: 14px; background: #fff; }
+  .tname { font-family: var(--mono); font-size: 12px; color: var(--accent); word-break: break-word; }
+  .tdesc { font-size: 12.5px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+
+  /* nav dots */
+  .dots { display: flex; gap: 7px; }
+  .dots span { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); cursor: pointer; }
+  .dots span.on { background: var(--accent); border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+  <div class="deck">
+    <div class="bar">
+      <div class="bar-left">
+        <span><b>CityPark Assistant</b> — AI FastTrack program</span>
+        <div class="subrow">
+          <small class="navhint">← / →&nbsp; or click a dot</small>
+          <div class="dots" id="dots"></div>
+        </div>
+      </div>
+      <span class="accent">LangGraph · RAG · MCP</span>
+    </div>
+
+    <div class="stage">
+
+      <!-- SLIDE 1 — ARCHITECTURE -->
+      <section class="slide active" data-title="Architecture">
+        <div class="r num">01 — Overview</div>
+        <h1 class="r">Architecture</h1>
+        <p class="r lede">A four-stage pipeline orchestrated by LangGraph. A chatbot helps the user, hands a
+          confirmed reservation to a human admin, and an MCP server records the approved booking.</p>
+
+        <div class="r pipe">
+          <div class="box"><div class="h">User</div></div>
+          <span class="to">→</span>
+          <div class="box"><div class="t">Agent 1</div><div class="h">RAG Chatbot</div><div class="s">finds parking, checks availability, collects details</div></div>
+          <span class="to">→</span>
+          <div class="box"><div class="t">Agent 2</div><div class="h">Admin · HITL</div><div class="s">approves / rejects the request</div></div>
+          <span class="to">→</span>
+          <div class="box"><div class="t">Stage 3</div><div class="h">MCP Server</div><div class="s">saves the booking</div></div>
+        </div>
+
+        <div class="r">
+          <p class="note"><span class="k">Static data</span> — parking info in a FAISS vector store (LlamaIndex).</p>
+          <p class="note"><span class="k">Live data</span> — availability &amp; bookings in SQLite (the <span class="k">BOOKINGS</span> table).</p>
+          <p class="note"><span class="k">Stack</span> — LangGraph · FastAPI · LlamaIndex · SQLite · FastMCP · Anthropic/OpenAI.</p>
+        </div>
+      </section>
+
+      <!-- SLIDE 2 — AGENT & LOGIC -->
+      <section class="slide" data-title="Agent & Logic">
+        <div class="r num">02 — How it works</div>
+        <h1 class="r">Agent &amp; Logic</h1>
+        <p class="r lede">Two agents share one graph state. The main agent loops over tools to answer the user;
+          the admin sub-agent pauses for a human, then records the result.</p>
+
+        <div class="r cols">
+          <div class="card">
+            <h2>Agent 1 — RAG Chatbot</h2>
+            <div class="role">user-facing · guarded</div>
+            <pre>user question
+   ↓
+guard_route
+   ↓
+llm_call <b>⇄</b> tool_node
+   ↓
+escalate → <b>Agent 2 (Admin, if ready for approval)</b>
+   ↓
+pre_end_guard → reply</pre>
+            <ul>
+              <li><b>guard_route</b> — blocks off-topic / unsafe input</li>
+              <li><b>llm_call</b> — answers &amp; calls tools (RAG, availability, price, reserve)</li>
+              <li><b>escalates</b> a confirmed reservation to <b>Agent 2</b> (Admin subagent)</li>
+              <li><b>pre_end_guard</b> — hides phone numbers in the reply</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>Agent 2 — Admin (HITL)</h2>
+            <div class="role">human-in-the-loop</div>
+            <pre>approval <b>(interrupt)</b>
+   ↓
+llm_call_admin <b>⇄</b> tool_node_adm
+   ↓
+saves to <b>BOOKINGS</b></pre>
+            <ul>
+              <li><b>approval</b> — pauses for the admin's decision</li>
+              <li><b>resume</b> — applies approve / reject</li>
+              <li><b>on approve</b> — MCP tool saves it; chat is notified</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 3 — INFRASTRUCTURE -->
+      <section class="slide" data-title="Infrastructure">
+        <div class="r num">03 — Infrastructure</div>
+        <h1 class="r">Agent Infrastructure</h1>
+
+        <div class="r infra">
+          <div class="infra-img">
+            <img src="scrn_Presentation/LangsmAgentsStructure.jpg" alt="LangGraph agent structure in LangSmith" />
+          </div>
+          <div class="infra-nodes">
+            <div class="grp">Main agent</div>
+            <dl>
+              <dt>init</dt><dd>resets the per-request loop counter</dd>
+              <dt>llm_call</dt><dd>main LLM — answers, decides tool calls</dd>
+              <dt>tool_node</dt><dd>runs tools: RAG, availability, price, reserve</dd>
+              <dt>reject</dt><dd>canned reply for off-topic / unsafe input</dd>
+              <dt>pre_end_guard</dt><dd>masks phone numbers before the reply</dd>
+              <dt>sub_agen_admin</dt><dd>the Admin subagent (nested graph)</dd>
+            </dl>
+            <div class="grp">Admin subagent</div>
+            <dl>
+              <dt>init_node</dt><dd>sets admin context, clears its channel</dd>
+              <dt>approval_node</dt><dd>pauses (interrupt) for the decision</dd>
+              <dt>llm_call_admin</dt><dd>admin LLM — summarizes, calls save tool</dd>
+              <dt>tool_node_adm</dt><dd>runs the MCP save tool → BOOKINGS</dd>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 4 — THE APP -->
+      <section class="slide" data-title="The App">
+        <div class="r num">04 — Interfaces</div>
+        <h1 class="r">The Application</h1>
+        <div class="r shots">
+          <figure>
+            <img src="scrn_Presentation/usersPanel.jpg" alt="User chat panel" />
+            <figcaption><b>User</b> — chat, reservation summary, masked phone</figcaption>
+          </figure>
+          <figure>
+            <img src="scrn_Presentation/AdminPanel.jpg" alt="Admin panel" />
+            <figcaption><b>Admin</b> — pending request, approve / reject</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- SLIDE 5 — DEPLOYMENT -->
+      <section class="slide" data-title="Deployment">
+        <div class="r num">05 — Deployment</div>
+        <h1 class="r">Deployment</h1>
+        <p class="r lede">A single-process dev/demo deployment today, with a clear path to scale.</p>
+        <div class="r cols">
+          <div class="card">
+            <h2>Dev / demo (current)</h2>
+            <div class="role">one process · in-memory state</div>
+            <ul>
+              <li>single <b>uvicorn</b> worker + <b>InMemorySaver</b></li>
+              <li><b>.env</b>: ANTHROPIC_API_KEY <span class="muted">(or OPENAI_API_KEY + LLM_PROVIDER=openai)</span></li>
+              <li><b>HF_TOKEN</b> optional — embedding-model download in CI</li>
+              <li><b>CI</b> builds index/DB &amp; runs pytest on push / PR</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h2>Scaling to production</h2>
+            <div class="role">shared state · resilient</div>
+            <ul>
+              <li>swap <b>InMemorySaver → PostgresSaver</b>, then run multiple workers</li>
+              <li>make LLM calls <b>async</b> + add <b>retry / backoff</b> for rate limits</li>
+              <li><b>containerise</b> (Dockerfile) behind a load balancer</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 6 — STAGE 1 · CHATBOT & TOOLS -->
+      <section class="slide" data-title="Stage 1 · Tools">
+        <div class="r num">06 — Stage 1 · Part 1</div>
+        <h1 class="r">The Chatbot &amp; its Tools</h1>
+        <p class="r lede">A RAG chatbot that answers parking questions, checks live availability,
+          prices a stay, and collects a reservation — using four tools.</p>
+        <div class="r tools">
+          <div class="tool">
+            <div class="tname">Retrieve_data_from_company_database</div>
+            <div class="tdesc">RAG over the FAISS store (LlamaIndex) — answers about locations, hours and rules from static info.</div>
+          </div>
+          <div class="tool">
+            <div class="tname">query_available_spots</div>
+            <div class="tdesc">Async SQLite query — which spots are free by location, time window and type.</div>
+          </div>
+          <div class="tool">
+            <div class="tname">Price_Calculator</div>
+            <div class="tdesc">Computes cost from hours / days at the spot's hourly &amp; daily rates.</div>
+          </div>
+          <div class="tool">
+            <div class="tname">store_or_update_info_for_parking_proposal</div>
+            <div class="tdesc">Validates &amp; stores the reservation details into graph state for approval.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 7 — STAGE 1 · GUARDRAILS -->
+      <section class="slide" data-title="Stage 1 · Guardrails">
+        <div class="r num">07 — Stage 1 · Part 2</div>
+        <h1 class="r">Protection &amp; Guardrails</h1>
+        <p class="r lede">Inputs are screened before the model runs; outputs are screened before they reach the user.</p>
+        <div class="r cols">
+          <div class="card">
+            <h2>Input guard</h2>
+            <div class="role">before the agent</div>
+            <ul>
+              <li><b>guard_route</b> — a structured-output classifier on every message</li>
+              <li>blocks <b>off-topic</b>, prompt-override / jailbreak, and data-extraction attempts</li>
+              <li><b>reject</b> — returns a polite parking-only message</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h2>Output &amp; runtime guards</h2>
+            <div class="role">before the reply</div>
+            <ul>
+              <li><b>pre_end_guard</b> — masks phone numbers (regex) in the reply</li>
+              <li><b>grounded answers</b> — facts come from the RAG tool, not invented</li>
+              <li><b>loop guard</b> — caps tool / LLM iterations per request</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 8 — STAGE 1 · EVALUATION -->
+      <section class="slide" data-title="Stage 1 · Evaluation">
+        <div class="r num">08 — Stage 1 · Part 3</div>
+        <h1 class="r">Performance Testing</h1>
+        <div class="r infra">
+          <div class="infra-img">
+            <img src="scrn_Presentation/Evals%20report.png" alt="RAGAS evaluation report" />
+          </div>
+          <div class="infra-nodes">
+            <div class="grp">RAGAS metrics · 10 questions</div>
+            <dl>
+              <dt>faithfulness</dt><dd>answer grounded in retrieved context — mean 1.00</dd>
+              <dt>context recall</dt><dd>needed info was retrieved — mean 1.00</dd>
+              <dt>answer relevancy</dt><dd>answer addresses the question — mean 0.94</dd>
+              <dt>context precision</dt><dd>retrieved chunks are on-point — mean 0.93</dd>
+              <dt>noise sensitivity</dt><dd>robustness to irrelevant context (lower = better)</dd>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 9 — STAGE 2 · APPROVAL FLOW -->
+      <section class="slide" data-title="Stage 2 · Approval">
+        <div class="r num">09 — Stage 2 · Part 1</div>
+        <h1 class="r">Human-in-the-Loop Approval</h1>
+        <p class="r lede">A reservation the user confirms is sent to an admin for approval; once approved,
+          it's stored by the MCP server.</p>
+        <div class="r cols">
+          <div class="card">
+            <h2>Pause &amp; resume</h2>
+            <div class="role">interrupt → resume</div>
+            <pre>llm_call → escalate
+   ↓
+approval_node <b>interrupt()</b>   pauses
+   ↓
+admin decides on the admin page
+   ↓
+<b>Command(resume=…)</b>   resumes on approve / reject</pre>
+          </div>
+          <div class="card">
+            <h2>The decision</h2>
+            <div class="role">approve / reject</div>
+            <ul>
+              <li><b>/admin/pending</b> — lists paused reservations</li>
+              <li><b>/admin/decision</b> — sends <code>{decision, reason}</code></li>
+              <li><b>approve</b> → saved &amp; confirmed · <b>reject</b> → status rejected</li>
+              <li>state survives the pause via the <b>InMemorySaver</b> checkpointer</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 10 — STAGE 2 · ADMIN AGENT -->
+      <section class="slide" data-title="Stage 2 · Admin agent">
+        <div class="r num">10 — Stage 2 · Part 2</div>
+        <h1 class="r">The Admin Agent &amp; Feedback</h1>
+        <p class="r lede">A dedicated subgraph handles the decision, records the result, and reports back to the user.</p>
+        <div class="r cols">
+          <div class="card">
+            <h2>Admin subgraph</h2>
+            <div class="role">its own channel</div>
+            <pre>init → approval
+   ↓
+llm_call_admin <b>⇄</b> tool_node_adm
+   ↓
+saves to <b>BOOKINGS</b></pre>
+            <ul>
+              <li>runs on <b>message_admin</b> — admin chatter never leaks to the user</li>
+              <li>tool error → status <b>rejected</b>, asks the chatbot to re-verify</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h2>Notifying the user</h2>
+            <div class="role">async delivery</div>
+            <ul>
+              <li>on submit, the chat got a <b>pending</b> response</li>
+              <li>on decision, the reply is queued to an <b>outbox</b></li>
+              <li>the chat <b>polls /chat/poll</b> and shows the outcome automatically</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 11 — STAGE 3 · MCP SERVER -->
+      <section class="slide" data-title="Stage 3 · MCP server">
+        <div class="r num">11 — Stage 3</div>
+        <h1 class="r">The MCP Server</h1>
+        <p class="r lede">Approved reservations are persisted by a standalone MCP server built with FastMCP.</p>
+        <div class="r card">
+          <h2>Dictionary_saver tool</h2>
+          <div class="role">FastMCP · stdio</div>
+          <ul>
+            <li><b>validates</b> the reservation, then <b>stores it in SQLite</b> (the <code>BOOKINGS</code> table) as <code>approved</code></li>
+            <li>the spot becomes <b>unavailable</b> — availability filters <code>status = "approved"</code></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- SLIDE 12 — STAGE 4 · ORCHESTRATION -->
+      <section class="slide" data-title="Stage 4 · Orchestration">
+        <div class="r num">12 — Stage 4</div>
+        <h1 class="r">Orchestration</h1>
+        <p class="r lede">LangGraph wires the RAG chatbot, the admin HITL subagent, and the MCP save
+          into a single graph over one shared state.</p>
+        <div class="r cols">
+          <div class="card">
+            <h2>One graph, shared state</h2>
+            <div class="role">LangGraph</div>
+            <ul>
+              <li>a single <b>StateGraph</b> over a shared <b>MessagesState</b></li>
+              <li>the admin agent is nested as the <b>sub_agen_admin</b> node</li>
+              <li><b>should_continue</b> routes: tools · admin · end</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h2>Served &amp; persisted</h2>
+            <div class="role">FastAPI</div>
+            <ul>
+              <li><b>FastAPI</b> exposes <code>/chat</code>, <code>/chat/poll</code>, <code>/admin/*</code></li>
+              <li><b>InMemorySaver</b> checkpointer enables interrupt / resume</li>
+              <li>also compiled without a checkpointer for the eval script</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 13 — TESTING -->
+      <section class="slide" data-title="Testing">
+        <div class="r num">13 — Quality · Testing</div>
+        <h1 class="r">Testing</h1>
+        <p class="r lede">78 pytest tests across every module, run on each push and pull request.</p>
+        <div class="r cols">
+          <div class="card">
+            <h2>What's covered</h2>
+            <div class="role">pytest · 78 tests</div>
+            <ul>
+              <li><b>test_nodes</b> — guards, tools, phone masking, routing</li>
+              <li><b>test_nodes_admin</b> — HITL interrupt / resume, approve / reject</li>
+              <li><b>test_mcp</b> — save tool: insert &amp; validation</li>
+              <li><b>test_tools · test_retriever · test_api</b> — tools, RAG, endpoints</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h2>How</h2>
+            <div class="role">fast &amp; isolated</div>
+            <ul>
+              <li>the LLM is <b>mocked</b> — deterministic, no API cost</li>
+              <li>MCP tests use a <b>temporary SQLite DB</b></li>
+              <li>HITL tested with real <b>interrupt() / Command(resume)</b></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 14 — LOAD TESTING -->
+      <section class="slide" data-title="Load testing">
+        <div class="r num">14 — Quality · Load</div>
+        <h1 class="r">Load Testing</h1>
+        <p class="r lede">Locust simulates concurrent users to measure throughput and latency.</p>
+        <div class="r card">
+          <h2>What it drives</h2>
+          <div class="role">Locust</div>
+          <ul>
+            <li><b>ChatUser</b> — POST <code>/chat</code> + GET <code>/chat/poll</code></li>
+            <li><b>AdminUser</b> — GET <code>/admin/pending</code></li>
+            <li>reports <b>requests/s, latency, error rate</b></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- SLIDE 15 — CI -->
+      <section class="slide" data-title="CI">
+        <div class="r num">15 — Quality · CI</div>
+        <h1 class="r">Continuous Integration</h1>
+        <p class="r lede">GitHub Actions runs the whole suite automatically on every push and pull request.</p>
+        <div class="r cols">
+          <div class="card">
+            <h2>The pipeline</h2>
+            <div class="role">.github/workflows/ci.yml</div>
+            <ul>
+              <li>install <b>uv</b> + Python 3.13, then <b>uv sync</b></li>
+              <li>build the <b>FAISS index</b> &amp; seed the <b>SQLite DB</b></li>
+              <li>run <b>uv run pytest</b> — the full suite</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h2>Config</h2>
+            <div class="role">secrets &amp; cache</div>
+            <ul>
+              <li>secrets: <b>ANTHROPIC_API_KEY</b>, <b>HF_TOKEN</b></li>
+              <li>caches the <b>HuggingFace embedding model</b> between runs</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /stage -->
+  </div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const dots = document.getElementById('dots');
+  let i = 0;
+
+  slides.forEach((_, k) => {
+    const d = document.createElement('span');
+    d.onclick = () => show(k);
+    dots.appendChild(d);
+  });
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    [...dots.children].forEach((d, k) => d.classList.toggle('on', k === i));
+  }
+
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight', ' '].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    if (e.key === 'ArrowLeft') show(i - 1);
+  });
+
+  show(0);
+</script>
+</body>
+</html>

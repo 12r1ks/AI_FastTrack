@@ -23,9 +23,9 @@ class RouteDecision(BaseModel):
         description="Decide which node to go")
 
 #   For conditional Edge
-def guard_route(state: MessagesState) -> Literal["llm_call", "reject"]:
+async def guard_route(state: MessagesState) -> Literal["llm_call", "reject"]:
     structured = model.with_structured_output(RouteDecision)
-    result = structured.invoke(
+    result = await structured.ainvoke(
         [
             SystemMessage(content=(
                 "You are a security guard for a parking reservation chatbot. "
@@ -62,11 +62,11 @@ def reject_node(state: MessagesState) -> dict:
 
 #───LLM call, central llm Node────────────────────────────────────────────
 #   Answer user's question by using tools. Propose reservation.
-def llm_call(state: MessagesState) -> MessagesState:
-    
+async def llm_call(state: MessagesState) -> MessagesState:
+
     return {
         "messages": [
-            model_with_tools.invoke(
+            await model_with_tools.ainvoke(
                 [
                     SystemMessage(
                         content=(

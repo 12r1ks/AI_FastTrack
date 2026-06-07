@@ -31,29 +31,31 @@ def test_init_node_sets_llm_calls_when_missing():
 
 # ── guard_route ───────────────────────────────────────────────────────────────
 
-def test_guard_route_returns_llm_call_for_parking():
+@pytest.mark.asyncio
+async def test_guard_route_returns_llm_call_for_parking():
     mock_result = MagicMock()
     mock_result.route = "llm_call"
 
     with patch("app.agent.Utils.nodes.model") as mock_model:
         mock_structured = MagicMock()
-        mock_structured.invoke.return_value = mock_result
+        mock_structured.ainvoke = AsyncMock(return_value=mock_result)
         mock_model.with_structured_output.return_value = mock_structured
 
-        result = guard_route(ms({"messages": [HumanMessage(content="What are the parking hours?")]}))
+        result = await guard_route(ms({"messages": [HumanMessage(content="What are the parking hours?")]}))
 
     assert result == "llm_call"
 
-def test_guard_route_returns_reject_for_offtopic():
+@pytest.mark.asyncio
+async def test_guard_route_returns_reject_for_offtopic():
     mock_result = MagicMock()
     mock_result.route = "reject"
 
     with patch("app.agent.Utils.nodes.model") as mock_model:
         mock_structured = MagicMock()
-        mock_structured.invoke.return_value = mock_result
+        mock_structured.ainvoke = AsyncMock(return_value=mock_result)
         mock_model.with_structured_output.return_value = mock_structured
 
-        result = guard_route(ms({"messages": [HumanMessage(content="What is the weather today?")]}))
+        result = await guard_route(ms({"messages": [HumanMessage(content="What is the weather today?")]}))
 
     assert result == "reject"
 
